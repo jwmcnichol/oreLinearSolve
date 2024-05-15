@@ -1,26 +1,5 @@
 import pulp
 
-# Define the problem
-problem = pulp.LpProblem("Ore_Minimization", pulp.LpMinimize)
-
-# Define the variables
-# Amount of each ore to use (non-negative)
-ores = ["Veldspar", "Scordite", "Pyroxeres", "Plagioclase", "Omber", "Kernite", "Jaspet", "Hemorphite", "Hedbergite", "Gneiss", "Dark Ochre", "Crokite", "Spodumain", "Bistot", "Arkonor", "Mercoxit"]
-ore_vars = pulp.LpVariable.dicts("Ore", ores, lowBound=0)
-
-# Define the mineral requirements (example values, adjust as necessary)
-requirements = {
-    "Tritanium": 50000,
-    "Pye": 0,
-    "Mex": 0,
-    "Iso": 0,
-    "Noc": 0,
-    "Zyd": 0,
-    "Meg": 0,
-    "Mor": 0
-}
-
-# Mineral content per ore type from your table (adjust values if necessary)
 content = {
     "Veldspar": {"Tritanium": 400},
     "Scordite": {"Tritanium": 150, "Pye": 90},
@@ -37,24 +16,76 @@ content = {
     "Spodumain": {"Tritanium": 48000, "Iso": 1000, "Noc": 160, "Zyd": 80, "Meg": 40},
     "Bistot": {"Pye": 3200, "Mex": 1200, "Zyd": 160},
     "Arkonor": {"Pye": 3200, "Mex": 1200, "Meg": 120},
-    "Mercoxit": {"Mor": 140}
+    "Mercoxit": {"Mor": 140},
+    "pinkmod": {
+                'Tritanium': 330780.0, 'Pye': 367852.8, 'Mex': 940684.42,
+                'Iso': 3744000.0, 'Noc': 3128992.0, 'Zyd': 275196.0, 'Meg': 208000.0
+                }
+}
+cost = {
+    "pinkmod": 4900000,
+    "Scordite": 27.77,
+    "Pyroxeres": 35.5,
+    "Plagioclase": 228,
+    "Omber": 443.8,
+    "Kernite": 601.1,
+    "Jaspet": 1733,
+    "Hemorphite": 1550,
+    "Hedbergite": 3450,
+    "Gneiss": 8400,
+    "Dark Ochre": 9209,
+    "Crokite": 2800,
+    "Bistot": 6260,
+    "Arkonor": 20980,
+    "Spodumain": 24910,
+    "Bezdnacine": 16970,
+    "Rakovene": 18000,
+    "Talassonite": 64000,
+    "Mercoxit": 83.88,
+    "Mordunium": 799.9,
+    "Ytirium": 3600,
+    "Eifyrium": 8000,
+    "Ducinium": 1000,
+    "Veldspar": 14.99
+}
+requirements = {
+    "Tritanium": 50000,
+    "Pye": 265000,
+    "Mex": 1250000,
+    "Iso": 65120,
+    "Noc": 9000,
+    "Zyd": 700,
+    "Meg": 900,
+    "Mor": 5
 }
 
-# Objective function: minimize total ore used
-problem += pulp.lpSum([ore_vars[ore] for ore in ores]), "Total Ore Used"
+# Initialize the linear programming model
+model = pulp.LpProblem("Minimize_Cost", pulp.LpMinimize)
 
-# Add constraints to meet mineral requirements
-for mineral, requirement in requirements.items():
-    problem += pulp.lpSum([content.get(ore, {}).get(mineral, 0) * ore_vars[ore] for ore in ores]) >= requirement, f"min_{mineral}"
+# Ore variables dictionary with lower limit 0 (can't have negative amounts of ore)
+ore_vars = {ore: pulp.LpVariable(f"ore_{ore}", lowBound=0, cat=pulp.LpInteger) for ore in cost}
 
-# Solve the problem
-problem.solve()
+# Objective function: Minimize total cost of ores
+model += pulp.lpSum([cost[ore] * ore_vars[ore] for ore in cost]), "Total Cost"
 
-# Output the results
-print("Status:", pulp.LpStatus[problem.status])
-for v in problem.variables():
-    if v.varValue > 0:
-        print(v.name, "=", v.varValue)
+# Constraints to ensure each mineral requirement is met
+for mineral, req in requirements.items():
+    model += (
+        pulp.lpSum([content.get(ore, {}).get(mineral, 0) * ore_vars[ore] for ore in content]) >= req,
+        f"Req_{mineral}"
+    )
 
-# Display the objective value (total ore used)
-print("Total Ore Used:", pulp.value(problem.objective))
+# Solve the model
+model.solve()
+
+# Print the status of the solution
+print("Status:", pulp.LpStatus[model.status])
+
+# Print the optimized quantities of each ore
+for ore in ore_vars:
+    print(ore, "=", pulp.value(ore_vars[ore]))
+
+# Print the total cost of the solution
+total_cost = pulp.value(model.objective)
+print("Total Cost = ", total_cost)
+
