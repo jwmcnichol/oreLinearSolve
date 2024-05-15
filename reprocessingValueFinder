@@ -1,0 +1,103 @@
+# "C:\Users\jwmcn\OneDrive\Eve Current\ITM.csv"
+import pandas as pd
+import requests
+ITM_Path = "C:/Users/jwmcn/OneDrive/Eve Current/ITM.csv"
+# columns typeID	materialTypeID	quantity a/b/c
+pink_mod_type_id = 37610
+region_id = 10000002
+
+def get_id_from_user():
+    input_ID = input('Enter typeID')
+    return input_ID
+
+def get_item_name(id):
+    item_name = get_material_names(id)
+    return item_name
+
+def mainReprocessValueFinder():
+    ID_choice = int(get_id_from_user())  # cast to int
+    name_array_list = []
+    name_array_list.append(ID_choice)
+    picked_name = get_item_name(name_array_list)
+    print('picked', picked_name)
+    materials_df = filter_rows_by_value(ITM_Path, ID_choice)
+    material_type_id_list = materials_df['materialTypeID'].tolist()
+    material_quantity_list = materials_df['quantity'].tolist()
+    material_prices = fetch_esi_market_prices(region_id, material_type_id_list)
+    material_names = get_material_names(material_type_id_list)
+    final_results = compile_final_results_dict(material_names, material_prices, material_quantity_list)
+    print(final_results)
+    total_price = 0
+    for item in final_results:
+        print(final_results[item]," + ",total_price)
+        total_price = final_results[item] + total_price
+        print(total_price, 'before reprocessing')
+    # print(material_quantity_list)
+    # print(material_type_id_list)
+    # material_IDs = get_material_IDs(materials_df)
+    # print(material_IDs)
+    # material_names = get_item_names(material_IDs)
+
+def get_material_names(material_type_id_list):
+    url = "https://esi.evetech.net/latest/universe/names/"
+    headers = {'Content-Type': 'application/json'}
+    response = requests.post(url, json=material_type_id_list, headers=headers)
+    response.raise_for_status()
+    return {item['id']: item['name'] for item in response.json()}
+
+
+def filter_rows_by_value(ITM_Path, ID_choice):
+    # df = pd.read_excel(ITM_Path, sheet_name=ITM)
+    df = pd.read_csv(ITM_Path)
+    print('frbv', ID_choice)
+    filtered_df = df[df['typeID'] == ID_choice]
+    return filtered_df
+
+
+def fetch_esi_market_prices(region_id, material_type_id_list):
+    base_url = "https://esi.evetech.net/latest/markets/{}/orders/"
+    query_params = {
+        'datasource': 'tranquility',
+        'order_type': 'sell',
+        'page': 1
+    }
+    prices = {}
+    for type_id in material_type_id_list:
+        url = base_url.format(region_id)
+        query_params['type_id'] = type_id
+        response = requests.get(url, params=query_params)
+        response.raise_for_status()
+        orders = response.json()
+        if orders:
+            min_price = min(order['price'] for order in orders if order['type_id'] == type_id)
+            prices[type_id] = min_price
+        else:
+            prices[type_id] = None
+    # for type_id in prices:
+    #     print(ores_dict_limited[type_id], prices[type_id])
+    return prices
+
+
+def compile_final_results_dict(material_names, material_prices, material_quantity_list):
+    material_names_dict_to_list = []
+    for item in material_names.items():
+        material_names_dict_to_list.append(item[0])
+        print(material_names_dict_to_list)
+    compiled_list_array = {}
+    counter = 0
+    for id in material_names_dict_to_list:
+        loop_qty = material_quantity_list[counter]
+        loop_price = material_prices[id]
+        aggregate_price = loop_qty * loop_price
+        print (loop_qty, " x ", loop_price)
+        print(material_names[id], aggregate_price)
+        compiled_list_array[material_names[id]] = aggregate_price
+        counter = counter + 1
+    return compiled_list_array
+
+
+# type_id_list = df['typeID'].tolist()
+# material_type_id_list = df['materialTypeID'].tolist()
+# quantity_list = df['quantity'].tolist()
+
+mainReprocessValueFinder()
