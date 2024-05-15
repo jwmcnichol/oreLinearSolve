@@ -1,0 +1,163 @@
+import requests
+
+ores_dict_limited = {
+62520: "Compressed Scordite",
+62524: "Compressed Pyroxeres",
+62528: "Compressed Plagioclase",
+62532: "Compressed Omber",
+62536: "Compressed Kernite",
+62540: "Compressed Jaspet",
+62544: "Compressed Hemorphite",
+62548: "Compressed Hedbergite",
+62552: "Compressed Gneiss",
+62556: "Compressed Dark Ochre",
+62560: "Compressed Crokite",
+62564: "Compressed Bistot",
+62568: "Compressed Arkonor",
+62572: "Compressed Spodumain",
+62576: "Compressed Bezdnacine",
+62579: "Compressed Rakovene",
+62582: "Compressed Talassonite",
+62586: "Compressed Mercoxit",
+75275: "Compressed Mordunium",
+75279: "Compressed Ytirium",
+75283: "Compressed Eifyrium",
+75287: "Compressed Ducinium"
+
+}
+
+ores_dict_all = {
+62517: "Compressed Concentrated Veldspar",
+62518: "Compressed Dense Veldspar",
+62519: "Compressed Stable Veldspar",
+62520: "Compressed Scordite",
+62521: "Compressed Condensed Scordite",
+62522: "Compressed Massive Scordite",
+62523: "Compressed Glossy Scordite",
+62524: "Compressed Pyroxeres",
+62525: "Compressed Solid Pyroxeres",
+62526: "Compressed Viscous Pyroxeres",
+62527: "Compressed Opulent Pyroxeres",
+62528: "Compressed Plagioclase",
+62529: "Compressed Azure Plagioclase",
+62530: "Compressed Rich Plagioclase",
+62531: "Compressed Sparkling Plagioclase",
+62532: "Compressed Omber",
+62533: "Compressed Silvery Omber",
+62534: "Compressed Golden Omber",
+62535: "Compressed Platinoid Omber",
+62536: "Compressed Kernite",
+62537: "Compressed Luminous Kernite",
+62538: "Compressed Fiery Kernite",
+62539: "Compressed Resplendant Kernite",
+62540: "Compressed Jaspet",
+62541: "Compressed Pure Jaspet",
+62542: "Compressed Pristine Jaspet",
+62543: "Compressed Immaculate Jaspet",
+62544: "Compressed Hemorphite",
+62545: "Compressed Vivid Hemorphite",
+62546: "Compressed Radiant Hemorphite",
+62547: "Compressed Scintillating Hemorphite",
+62548: "Compressed Hedbergite",
+62549: "Compressed Vitric Hedbergite",
+62550: "Compressed Glazed Hedbergite",
+62551: "Compressed Lustrous Hedbergite",
+62552: "Compressed Gneiss",
+62553: "Compressed Iridescent Gneiss",
+62554: "Compressed Prismatic Gneiss",
+62555: "Compressed Brilliant Gneiss",
+62556: "Compressed Dark Ochre",
+62557: "Compressed Onyx Ochre",
+62558: "Compressed Obsidian Ochre",
+62559: "Compressed Jet Ochre",
+62560: "Compressed Crokite",
+62561: "Compressed Sharp Crokite",
+62562: "Compressed Crystalline Crokite",
+62563: "Compressed Pellucid Crokite",
+62564: "Compressed Bistot",
+62565: "Compressed Triclinic Bistot",
+62566: "Compressed Monoclinic Bistot",
+62567: "Compressed Cubic Bistot",
+62568: "Compressed Arkonor",
+62569: "Compressed Crimson Arkonor",
+62570: "Compressed Prime Arkonor",
+62571: "Compressed Flawless Arkonor",
+62572: "Compressed Spodumain",
+62573: "Compressed Bright Spodumain",
+62574: "Compressed Gleaming Spodumain",
+62575: "Compressed Dazzling Spodumain",
+62576: "Compressed Bezdnacine",
+62577: "Compressed Abyssal Bezdnacine",
+62578: "Compressed Hadal Bezdnacine",
+62579: "Compressed Rakovene",
+62580: "Compressed Abyssal Rakovene",
+62581: "Compressed Hadal Rakovene",
+62582: "Compressed Talassonite",
+62583: "Compressed Abyssal Talassonite",
+62584: "Compressed Hadal Talassonite",
+62586: "Compressed Mercoxit",
+62587: "Compressed Magma Mercoxit",
+62588: "Compressed Vitreous Mercoxit",
+75275: "Compressed Mordunium",
+75276: "Compressed Plum Mordunium",
+75277: "Compressed Prize Mordunium",
+75278: "Compressed Plunder Mordunium",
+75279: "Compressed Ytirium",
+75280: "Compressed Bootleg Ytirium",
+75281: "Compressed Firewater Ytirium",
+75282: "Compressed Moonshine Ytirium",
+75283: "Compressed Eifyrium",
+75284: "Compressed Doped Eifyrium",
+75285: "Compressed Boosted Eifyrium",
+75286: "Compressed Augmented Eifyrium",
+75287: "Compressed Ducinium",
+75288: "Compressed Noble Ducinium",
+75289: "Compressed Royal Ducinium",
+75290: "Compressed Imperial Ducinium"
+
+}
+
+def fetch_esi_market_prices(region_id, type_ids):
+    base_url = "https://esi.evetech.net/latest/markets/{}/orders/"
+    query_params = {
+        'datasource': 'tranquility',
+        'order_type': 'sell',
+        'page': 1
+    }
+
+    prices = {}
+    for type_id in ores_dict_limited:
+        # print (type_id, ores_dict_limited[type_id])
+        url = base_url.format(region_id)
+        query_params['type_id'] = type_id
+        response = requests.get(url, params=query_params)
+        response.raise_for_status()  # Raises an HTTPError for bad responses
+        orders = response.json()
+
+    # for type_id in type_ids:
+    #    url = base_url.format(region_id)
+    #    query_params['type_id'] = type_id
+    #    response = requests.get(url, params=query_params)
+    #    response.raise_for_status()  # Raises an HTTPError for bad responses
+
+        # Extract orders for the specific type ID
+     #  orders = response.json()
+
+        # Find the lowest sell price
+        if orders:
+            min_price = min(order['price'] for order in orders if order['type_id'] == type_id)
+            prices[type_id] = min_price
+        else:
+            prices[type_id] = None
+
+    for type_id in prices:
+        print(ores_dict_limited[type_id], prices[type_id])
+    return prices
+
+
+# Example usage
+region_id = 10000002  # The Forge
+type_ids = [62517, 62518, 62519, 62520]  # Example type IDs
+
+prices = fetch_esi_market_prices(region_id, type_ids)
+print(prices)
