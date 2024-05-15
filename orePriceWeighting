@@ -1,0 +1,102 @@
+ore_prices = {
+
+
+"Compressed Scordite": 27.77,
+"Cpmpressed Pyroxeres": 35.5,
+"Compressed Plagioclase": 228,
+"Compressed Omber": 443.8,
+"Compressed Kernite": 601.1,
+"Compressed Jaspet": 1733,
+"Compressed Hemorphite": 1550,
+"Compressed Hedbergite": 3450,
+"Compressed Gneiss": 8400,
+"Compressed Dark Ochre": 9209,
+"Compressed Crokite": 2800,
+"Compressed Bistot": 6260,
+"Compressed Arkonor": 20980,
+"Compressed Spodumain": 24910,
+"Compressed Bezdnacine": 16970,
+"Compressed Rakovene": 18000,
+"Compressed Talassonite": 64000,
+"Compressed Mercoxit": 83.88,
+"Compressed Mordunium": 799.9,
+"Compressed Ytirium": 3600,
+"Compressed Eifyrium": 8000,
+"Compressed Ducinium": 0
+
+}
+
+ore_content_dimension = {
+    "Compressed Veldspar": {"Tri": 400},
+    "Compressed Scordite": {"Tri": 150, "Pye": 90},
+    "Compressed Pyroxeres": {"Pye": 90, "Mex": 30},
+    "Compressed Plagioclase": {"Tri": 175, "Mex": 70},
+    "Compressed Omber": {"Pye": 90, "Iso": 75},
+    "Compressed Kernite": {"Mex": 60, "Iso": 120},
+    "Compressed Jaspet": {"Mex": 150, "Noc": 50},
+    "Compressed Hemorphite": {"Iso": 240, "Noc": 90},
+    "Compressed Hedbergite": {"Pye": 450, "Noc": 120},
+    "Compressed Gneiss": {"Pye": 2000, "Mex": 1500, "Iso": 800},
+    "Compressed Dark Ochre": {"Mex": 1360, "Iso": 1200, "Noc": 320},
+    "Compressed Crokite": {"Pye": 800, "Mex": 2000, "Iso": 800},
+    "Compressed Spodumain": {"Tri": 48000, "Iso": 1000, "Noc": 160, "Zyd": 80, "Meg": 40},
+    "Compressed Bistot": {"Pye": 3200, "Mex": 1200, "Zyd": 160},
+    "Compressed Arkonor": {"Pye": 3200, "Mex": 1200, "Meg": 120},
+    "Compressed Mercoxit": {"Mor": 140}
+}
+
+converted_ore_prices = {
+
+}
+
+type_ID_to_name = {
+62520: "Compressed Scordite",
+62524: "Compressed Pyroxeres",
+62528: "Compressed Plagioclase",
+62532: "Compressed Omber",
+62536: "Compressed Kernite",
+62540: "Compressed Jaspet",
+62544: "Compressed Hemorphite",
+62548: "Compressed Hedbergite",
+62552: "Compressed Gneiss",
+62556: "Compressed Dark Ochre",
+62560: "Compressed Crokite",
+62564: "Compressed Bistot",
+62568: "Compressed Arkonor",
+62572: "Compressed Spodumain",
+62576: "Compressed Bezdnacine",
+62579: "Compressed Rakovene",
+62582: "Compressed Talassonite",
+62586: "Compressed Mercoxit",
+75275: "Compressed Mordunium",
+75279: "Compressed Ytirium",
+75283: "Compressed Eifyrium",
+75287: "Compressed Ducinium"
+
+}
+
+
+def weight_ore_content_by_price(ore_content, ore_prices):
+    weighted_content = {}
+
+    # Calculate total cost for reference
+    total_cost = sum(ore_prices.values())
+
+    # Avoid division by zero in case total cost is zero
+    if total_cost == 0:
+        return ore_content
+
+    # Adjust each ore's content based on its price
+    for ore, content in ore_content.items():
+        price_weight = ore_prices.get(ore, 0) / total_cost
+        weighted_content[ore] = {mineral: amount * price_weight for mineral, amount in content.items()}
+
+    return weighted_content
+
+
+# Example data from the question
+
+
+# Calculate the weighted content
+weighted_ore_content = weight_ore_content_by_price(ore_content_dimension, ore_prices)
+print(weighted_ore_content)
