@@ -2,17 +2,40 @@
 import pandas as pd
 import requests
 ITM_Path = "C:/Users/jwmcn/OneDrive/Eve Current/ITM.csv"
-# columns typeID	materialTypeID	quantity a/b/c
+# "C:\Users\jwmcn\Downloads\lowestPricesPerSystemAllModules.csv"
+orders_path = "C:/Users/jwmcn/Downloads/lowestPricesPerSystemAllModules.csv"
+
+
 pink_mod_type_id = 37610
 region_id = 10000002
+jita = 30000142
 
 def get_id_from_user():
     input_ID = input('Enter typeID')
     return input_ID
 
+
 def get_item_name(id):
     item_name = get_material_names(id)
     return item_name
+
+def get_item_array_by_component():
+    pass
+
+
+
+
+def get_orders_from_local(orders_path, mats_id):
+    df = pd.read_csv(orders_path)
+    filtered_df = df[df['type_id'] == mats_id]
+    return filtered_df
+
+def write_df(dataframe):
+    df = pd.DataFrame(dataframe)
+    file_path = 'C:/Users/jwmcn/OneDrive/Eve Current/dfOUT.csv'
+    df.to_csv(file_path, index=False)
+
+
 
 def mainReprocessValueFinder():
     ID_choice = int(get_id_from_user())  # cast to int
@@ -20,7 +43,7 @@ def mainReprocessValueFinder():
     name_array_list.append(ID_choice)
     picked_name = get_item_name(name_array_list)
     print('picked', picked_name)
-    materials_df = filter_rows_by_value(ITM_Path, ID_choice)
+    materials_df = filter_rows_by_type_ID(ITM_Path, ID_choice)
     material_type_id_list = materials_df['materialTypeID'].tolist()
     material_quantity_list = materials_df['quantity'].tolist()
     material_prices = fetch_esi_market_prices(region_id, material_type_id_list)
@@ -46,12 +69,28 @@ def get_material_names(material_type_id_list):
     return {item['id']: item['name'] for item in response.json()}
 
 
-def filter_rows_by_value(ITM_Path, ID_choice):
+def filter_rows_by_type_ID(ITM_Path, ID_choice):
     # df = pd.read_excel(ITM_Path, sheet_name=ITM)
     df = pd.read_csv(ITM_Path)
     print('frbv', ID_choice)
     filtered_df = df[df['typeID'] == ID_choice]
     return filtered_df
+
+def filter_list_rows_by_type_ID(ITM_Path, values_list):
+    df = pd.read_csv(ITM_Path)
+    filtered_df = df[df['typeID'].isin(values_list)]
+    return filtered_df
+
+def filter_rows_by_mats_ID(ITM_Path, ID_choice):
+    df = pd.read_csv(ITM_Path)
+    filtered_df = df[df['materialTypeID'] == ID_choice]
+    return filtered_df
+
+def filter_rows_by_system_id(dataframe, jita):
+    df = pd.read_csv(orders_path)
+    filtered_df = df[df['system_id'] == jita]
+    return filtered_df
+
 
 
 def fetch_esi_market_prices(region_id, material_type_id_list):
@@ -101,3 +140,4 @@ def compile_final_results_dict(material_names, material_prices, material_quantit
 # quantity_list = df['quantity'].tolist()
 
 mainReprocessValueFinder()
+# longitude(36)
