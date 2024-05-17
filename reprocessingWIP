@@ -1,0 +1,189 @@
+# "C:\Users\jwmcn\OneDrive\Eve Current\ITM.csv"
+import pandas as pd
+import requests
+ITM_Path = "C:/Users/jwmcn/OneDrive/Eve Current/ITM.csv"
+# "C:\Users\jwmcn\Downloads\lowestPricesPerSystemAllModules.csv"
+orders_path = "C:/Users/jwmcn/Downloads/lowestPricesPerSystemAllModules.csv"
+
+
+# columns typeID	materialTypeID	quantity a/b/c
+pink_mod_type_id = 37610
+region_id = 10000002
+
+def get_id_from_user():
+    input_ID = input('Enter typeID')
+    return input_ID
+
+# def get_item_id_array(typeID):
+
+
+def get_item_name(id):
+    item_name = get_material_names(id)
+    return item_name
+
+def get_item_array_by_component():
+    pass
+
+def longitude(mats_ID):
+    selected_columns = ['type_id', 'TYPENAME', 'system_id', 'price']
+    orders_df = pd.read_csv(orders_path)               # get all orders
+    cut_orders_df = orders_df[selected_columns]
+    items_df = filter_rows_by_mats_ID(ITM_Path, mats_ID) # filter the mats_ID from the input and return
+    distinct_values_df = items_df[['typeID', 'materialTypeID']].drop_duplicates() # deduplicate to produce df of ids having mats id
+    selected_columns = ['type_id', 'TYPENAME', 'system_id', 'price']
+    cut_orders_df = orders_df[selected_columns]
+
+    # related_list = distinct_values_df['typeID'].tolist()
+    # related_df = filter_list_rows_by_type_ID(ITM_Path, related_list)
+    # matched_prices = orders_df.merge(distinct_values_df[['materialTypeID']], on='typeID')
+    matched_prices = cut_orders_df.merge(distinct_values_df, left_on='type_id', right_on='materialTypeID')
+    print(matched_prices)
+    # cols_to_print = matched_prices['type_id', 'price'] #PROBLEM AROUND HERE
+
+    # print(cut_orders_df)
+    # print(related_df)
+
+    items_type_id_list = items_df['typeID'].tolist()
+    material_quantity_list = items_df['quantity'].tolist()
+    # item_names = get_material_names(items_type_id_list)
+    # typeID_to_name = {type_id: name for type_id, name in zip(items_type_id_list, item_names)}
+    # items_df['name'] = items_df['typeID'].map(typeID_to_name)
+    # print(items_df)
+    # item_prices = get_prices_from_local(items_type_id_list)
+    # print(items_type_id_list, material_quantity_list, item_prices)
+    write_df(cut_orders_df)
+
+# def get_all_related_rows(
+
+
+
+
+    # for each type_id:
+        #get all mats rows
+    # for each mats ID, get a price
+    # for eacg type id, get a price
+    # combine the two
+
+        #enter each related_mats_id in item into a list
+        #check if they are already in the list
+        #
+    # for each mat in item
+    #
+
+   # get all typeIDs that have matsID in ITMpath
+    # find lowest sell orders that have these typeIDs
+    # find the other mats ID for those typeID
+    # for all, do pricing
+
+
+
+def get_orders_from_local(orders_path, mats_id):
+    df = pd.read_csv(orders_path)
+    filtered_df = df[df['type_id'] == mats_id]
+    return filtered_df
+
+def write_df(dataframe):
+    df = pd.DataFrame(dataframe)
+    file_path = 'C:/Users/jwmcn/OneDrive/Eve Current/dfOUT.csv'
+    df.to_csv(file_path, index=False)
+
+
+
+def mainReprocessValueFinder():
+    ID_choice = int(get_id_from_user())  # cast to int
+    name_array_list = []
+    name_array_list.append(ID_choice)
+    picked_name = get_item_name(name_array_list)
+    print('picked', picked_name)
+    materials_df = filter_rows_by_type_ID(ITM_Path, ID_choice)
+    material_type_id_list = materials_df['materialTypeID'].tolist()
+    material_quantity_list = materials_df['quantity'].tolist()
+    material_prices = fetch_esi_market_prices(region_id, material_type_id_list)
+    material_names = get_material_names(material_type_id_list)
+    final_results = compile_final_results_dict(material_names, material_prices, material_quantity_list)
+    print(final_results)
+    total_price = 0
+    for item in final_results:
+        print(final_results[item]," + ",total_price)
+        total_price = final_results[item] + total_price
+        print(total_price, 'before reprocessing')
+    # print(material_quantity_list)
+    # print(material_type_id_list)
+    # material_IDs = get_material_IDs(materials_df)
+    # print(material_IDs)
+    # material_names = get_item_names(material_IDs)
+
+def get_material_names(material_type_id_list):
+    url = "https://esi.evetech.net/latest/universe/names/"
+    headers = {'Content-Type': 'application/json'}
+    response = requests.post(url, json=material_type_id_list, headers=headers)
+    response.raise_for_status()
+    return {item['id']: item['name'] for item in response.json()}
+
+
+def filter_rows_by_type_ID(ITM_Path, ID_choice):
+    # df = pd.read_excel(ITM_Path, sheet_name=ITM)
+    df = pd.read_csv(ITM_Path)
+    print('frbv', ID_choice)
+    filtered_df = df[df['typeID'] == ID_choice]
+    return filtered_df
+
+def filter_list_rows_by_type_ID(ITM_Path, values_list):
+    df = pd.read_csv(ITM_Path)
+    filtered_df = df[df['typeID'].isin(values_list)]
+    return filtered_df
+
+def filter_rows_by_mats_ID(ITM_Path, ID_choice):
+    df = pd.read_csv(ITM_Path)
+    filtered_df = df[df['materialTypeID'] == ID_choice]
+    return filtered_df
+
+
+def fetch_esi_market_prices(region_id, material_type_id_list):
+    base_url = "https://esi.evetech.net/latest/markets/{}/orders/"
+    query_params = {
+        'datasource': 'tranquility',
+        'order_type': 'sell',
+        'page': 1
+    }
+    prices = {}
+    for type_id in material_type_id_list:
+        url = base_url.format(region_id)
+        query_params['type_id'] = type_id
+        response = requests.get(url, params=query_params)
+        response.raise_for_status()
+        orders = response.json()
+        if orders:
+            min_price = min(order['price'] for order in orders if order['type_id'] == type_id)
+            prices[type_id] = min_price
+        else:
+            prices[type_id] = None
+    # for type_id in prices:
+    #     print(ores_dict_limited[type_id], prices[type_id])
+    return prices
+
+
+def compile_final_results_dict(material_names, material_prices, material_quantity_list):
+    material_names_dict_to_list = []
+    for item in material_names.items():
+        material_names_dict_to_list.append(item[0])
+        print(material_names_dict_to_list)
+    compiled_list_array = {}
+    counter = 0
+    for id in material_names_dict_to_list:
+        loop_qty = material_quantity_list[counter]
+        loop_price = material_prices[id]
+        aggregate_price = loop_qty * loop_price
+        print (loop_qty, " x ", loop_price)
+        print(material_names[id], aggregate_price)
+        compiled_list_array[material_names[id]] = aggregate_price
+        counter = counter + 1
+    return compiled_list_array
+
+
+# type_id_list = df['typeID'].tolist()
+# material_type_id_list = df['materialTypeID'].tolist()
+# quantity_list = df['quantity'].tolist()
+
+# mainReprocessValueFinder()
+longitude(36)
