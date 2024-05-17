@@ -1,0 +1,76 @@
+import pandas as pd
+import requests
+ITM_Path = "C:/Users/jwmcn/OneDrive/Eve Current/ITM.csv"
+# "C:\Users\jwmcn\Downloads\lowestPricesPerSystemAllModules.csv"
+orders_path = "C:/Users/jwmcn/Downloads/lowestPricesPerSystemAllModules.csv"
+# orders headers is_buy_order issued location_id order_id
+# price range system_id type_id volume_remain volume_total station_id
+# region_id solarSystemID TYPENAME
+
+pink_mod_type_id = 37610
+region_id = 10000002
+jita = 30000142
+
+def longitude(value):
+    # itm_df = pd.DataFrame(ITM_Path)
+    itm_df = filter_rows_by_mats_ID(ITM_Path, value)  # filter the mats_ID from the input and return
+
+    orders_df = get_orders_from_local(orders_path)
+    # Step 1: Filter the ITM DataFrame to get all typeIDs that have materialTypeID of 34
+    type_ids_with_34 = itm_df[itm_df['materialTypeID'] == 34]['typeID'].unique()
+
+    # Step 2: Get all rows from the orders DataFrame that have these typeIDs
+    filtered_orders = orders_df[orders_df['type_id'].isin(type_ids_with_34)]
+
+    # Step 3: Get all unique type_ids from the filtered orders
+    unique_type_ids = filtered_orders['type_id'].unique()
+
+    # Step 4: Get all rows from the orders DataFrame that have these unique type_ids
+    final_orders = orders_df[orders_df['type_id'].isin(unique_type_ids)]
+    print(final_orders)
+    write_df(final_orders)
+
+def write_df(dataframe):
+    df = pd.DataFrame(dataframe)
+    file_path = 'C:/Users/jwmcn/OneDrive/Eve Current/dfOUT.csv'
+    df.to_csv(file_path, index=False)
+
+
+def get_id_from_user():
+    input_ID = input('Enter typeID')
+    return input_ID
+
+# def get_item_name(id):
+#     item_name = get_material_names(id)
+#     return item_name
+
+
+def filter_rows_by_type_ID(ITM_Path, ID_choice):
+    df = pd.read_csv(ITM_Path)
+    print('frbv', ID_choice)
+    filtered_df = df[df['typeID'] == ID_choice]
+    return filtered_df
+
+
+def filter_rows_by_type_ID_list(ITM_Path, values_list):
+    df = pd.read_csv(ITM_Path)
+    filtered_df = df[df['typeID'].isin(values_list)]
+    return filtered_df
+
+
+def filter_rows_by_mats_ID(ITM_Path, ID_choice):
+    df = pd.read_csv(ITM_Path)
+    filtered_df = df[df['materialTypeID'] == ID_choice]
+    return filtered_df
+
+
+def filter_rows_by_system_id(dataframe, jita):
+    df = pd.read_csv(orders_path)
+    filtered_df = df[df['system_id'] == jita]
+    return filtered_df
+
+def get_orders_from_local(orders_path):
+    df = pd.read_csv(orders_path)
+    return df
+
+longitude(34)
